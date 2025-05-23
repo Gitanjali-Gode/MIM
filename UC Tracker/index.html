@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NIMIC Use‑Case Tracker</title>
+<style>
+ body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#fdfdfd}
+ /* Banner */
+ .banner{position:relative;background:#3d2a54;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:center;gap:40px}
+ .banner h1{margin:0;font-size:26px;font-weight:700;text-align:center}
+ .banner img{height:48px;filter:brightness(0) invert(1);} /* make logos white */
+ .banner:after{content:'';position:absolute;right:-40px;top:0;width:0;height:0;border-top:50px solid transparent;border-bottom:50px solid transparent;border-left:40px solid #3d2a54}
+ /* Board */
+ #board{display:flex;align-items:flex-start;padding:20px}
+ .column{flex:1;display:flex;flex-direction:column;padding:0 12px;min-height:650px}
+ .column:not(:first-child){border-left:2px solid #d0d0d0} /* thinner & lighter */
+ .colhead{display:flex;justify-content:space-between;align-items:center;font-size:18px;font-weight:600;margin-bottom:10px}
+ .add-btn{background:#ddd;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-weight:bold;line-height:26px;text-align:center}
+ .zone{flex:1;background:#fafafa;padding:6px;min-height:580px}
+ .box{position:relative;background:#fff;border:1px solid #999;padding:14px 34px 14px 14px;margin:12px 0;cursor:move;border-left:6px solid #6e6e6e;border-radius:2px}
+ .box .del{position:absolute;right:6px;top:6px;font-weight:bold;color:#777;cursor:pointer;display:none}
+ .box:hover .del{display:block}
+ .planned{border-left-color:#3d2a54}
+ .ideation{border-left-color:#d35400}
+ .development{border-left-color:#008578}
+ .testing{border-left-color:#2d6ac4}
+ .handover{border-left-color:#16a085}
+ .box:hover{box-shadow:0 3px 8px rgba(0,0,0,0.18)}
+ .drag-over{background:#e2f0ff}
+ .box.dragging{opacity:0.4}
+ @media(max-width:900px){
+   #board{flex-direction:column}
+   .column{border-left:none;border-top:2px solid #d0d0d0;margin-top:24px}
+   .column:first-child{border-top:none;margin-top:0}
+ }
+</style>
+</head>
+<body>
+
+<!-- Header banner -->
+<div class="banner">
+   <img src="nimic_logo.png" alt="NIMIC logo" onerror="this.style.display='none'">
+   <h1>NIMIC's Use Case Tracker</h1>
+   <img src="mim_logo.png" alt="MIM logo" onerror="this.style.display='none'">
+</div>
+
+<!-- Board -->
+<div id="board">
+  <div class="column" data-col="planned">
+    <div class="colhead">📋 Planned <button class="add-btn" title="Add use‑case">+</button></div>
+    <div class="zone" data-col="planned"></div>
+  </div>
+  <div class="column" data-col="ideation">
+    <div class="colhead">💡 Ideation <button class="add-btn" title="Add use‑case">+</button></div>
+    <div class="zone" data-col="ideation"></div>
+  </div>
+  <div class="column" data-col="development">
+    <div class="colhead">⚙️ Development <button class="add-btn" title="Add use‑case">+</button></div>
+    <div class="zone" data-col="development"></div>
+  </div>
+  <div class="column" data-col="testing">
+    <div class="colhead">🧪 Testing <button class="add-btn" title="Add use‑case">+</button></div>
+    <div class="zone" data-col="testing"></div>
+  </div>
+  <div class="column" data-col="handover">
+    <div class="colhead">🤝 Handover <button class="add-btn" title="Add use‑case">+</button></div>
+    <div class="zone" data-col="handover"></div>
+  </div>
+</div>
+
+<script>
+const colourMap={planned:'#3d2a54',ideation:'#d35400',development:'#008578',testing:'#2d6ac4',handover:'#16a085'};
+let uid=500;
+function styleBox(b,col){b.className='box '+col;b.style.borderLeftColor=colourMap[col];}
+function save(){
+  const arr=[];document.querySelectorAll('.box').forEach(b=>arr.push({id:b.id,text:b.querySelector('.text').innerText.trim(),col:b.parentElement.dataset.col}));
+  localStorage.setItem('nimicBoard',JSON.stringify(arr));
+}
+function createBox(text,col,id){
+  const d=document.createElement('div');d.id=id||('uc'+uid++);d.draggable=true;d.innerHTML='<span class="text" contenteditable="true">'+text+'</span><span class="del">×</span>';styleBox(d,col);addEvents(d);document.querySelector('.zone[data-col="'+col+'"]').appendChild(d);
+}
+function addEvents(box){
+  const text=box.querySelector('.text');const del=box.querySelector('.del');
+  box.addEventListener('dragstart',e=>{box.classList.add('dragging');e.dataTransfer.setData('text/plain',box.id);});
+  box.addEventListener('dragend',()=>{box.classList.remove('dragging');save();});
+  text.addEventListener('input',save);
+  del.addEventListener('click',()=>{if(confirm('Delete this card?')){box.remove();save();}});
+}
+function load(){
+  const data=JSON.parse(localStorage.getItem('nimicBoard')||'[]');
+  if(data.length){data.forEach(d=>createBox(d.text,d.col,d.id));}else{
+    [['Global Trade Potential and Market Attractiveness Dashboard','planned'],
+     ['Factory Success Likelihood Classification','planned'],
+     ['Investment Opportunity Feasibility Assessment','planned'],
+     ['Industry Incentives Analyzer','planned'],
+     ['KPI Catalog','planned'],
+     ['UC #4 Executive Dashboard for HEM','ideation'],
+     ['UC #5 NIMIC Heartbeat','development'],
+     ['UC #6 AI‑Powered Satellite Image Analytics','development'],
+     ['UC #7 Smart Inspection Prioritization','development'],
+     ['UC #3 Mining Annual Report Dashboard','testing'],
+     ['UC #1 Workforce Annual Report Dashboard','handover'],
+     ['UC #2 Industrial Annual Report Dashboard','handover']
+    ].forEach(([t,c])=>createBox(t,c));
+    save();
+  }
+}
+function afterElement(zone,y){
+  const els=[...zone.querySelectorAll('.box:not(.dragging)')];
+  return els.reduce((cl,ch)=>{const r=ch.getBoundingClientRect();const off=y-r.top-r.height/2;if(off<0&&off>cl.off){return{off,el:ch};}return cl;},{off:-Infinity}).el;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+ load();
+ document.querySelectorAll('.zone').forEach(z=>{
+  z.addEventListener('dragover',e=>{e.preventDefault();const after=afterElement(z,e.clientY);const d=document.querySelector('.dragging');if(!d)return;if(after==null){z.appendChild(d);}else{z.insertBefore(d,after);}z.classList.add('drag-over');});
+  z.addEventListener('dragleave',()=>z.classList.remove('drag-over'));
+  z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('drag-over');const d=document.querySelector('.dragging');if(d){styleBox(d,z.dataset.col);d.classList.remove('dragging');save();}});
+ });
+ document.querySelectorAll('.add-btn').forEach(b=>b.addEventListener('click',()=>{const col=b.closest('.column').dataset.col;const t=prompt('New use‑case name:');if(t)createBox(t,col);save();}));
+});
+</script>
+</body>
+</html>
